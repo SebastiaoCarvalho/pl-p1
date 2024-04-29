@@ -204,7 +204,7 @@ Notation "x !! y" :=
             (in custom com at level 99, no associativity) : com_scope.
 Notation "x -> y" :=
          (CCGuard x y)
-            (in custom com at level 99, no associativity) : com_scope.
+            (in custom com at level 99) : com_scope.
 
 (**
   1.3. TODO: Define p1 and p2 as, respectively, the programs:
