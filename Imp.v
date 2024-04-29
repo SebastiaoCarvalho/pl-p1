@@ -164,23 +164,18 @@ Proof. reflexivity. Qed.
 (** Here is the formal definition of the abstract syntax of
     commands: *)
 
-(** 
-  1.1. TODO: Extend the datatype with the two new constructs as specified.
-*)
 Inductive com : Type :=
   | CSkip
   | CAsgn (x : string) (a : aexp)
   | CSeq (c1 c2 : com)
   | CIf (b : bexp) (c1 c2 : com)
-  | CWhile (b : bexp) (c : com).
+  | CWhile (b : bexp) (c : com)
+  | CNDet (c1 c2 : com)
+  | CCGuard (b : bexp) (c : com).
 
 (** As for expressions, we can use a few [Notation] declarations to
     make reading and writing Imp programs more convenient. *)
 
-
-(**
-  1.2. TODO: Define notations for the new constructs as required
-*)
 Notation "'skip'"  :=
          CSkip (in custom com at level 0) : com_scope.
 Notation "x := y"  :=
@@ -197,14 +192,12 @@ Notation "'if' x 'then' y 'else' z 'end'" :=
 Notation "'while' x 'do' y 'end'" :=
          (CWhile x y)
             (in custom com at level 89, x at level 99, y at level 99) : com_scope.
+Notation "x !! y" :=
+         (CNDet x y)
+            (in custom com at level 99, no associativity) : com_scope.
+Notation "x -> y" :=
+         (CCGuard x y)
+            (in custom com at level 99, no associativity) : com_scope.
 
-(**
-  1.3. TODO: Define p1 and p2 as, respectively, the programs:
-
-                (X := 1  !!  X := 2);  X=2 -> skip
-             and
-                X:=2
-
-*)
-Example p1 := (* TODO *).
-Example p2 := (* TODO *).
+Example p1 := <{ (X := 1  !!  X := 2); (X=2 -> skip) }>.
+Example p2 := <{ X := 2 }>.
