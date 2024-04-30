@@ -146,6 +146,7 @@ Proof.
   intros.
   exists 4.
   intros.
+  apply (run_interperter).
 
 Qed.
 
@@ -166,10 +167,105 @@ Proof.
     + inversion Hle.
     + assert (Hle': i1' <= i2') by lia.
       destruct c.
-      * simpl in Hceval. simpl. rewrite Hceval. reflexivity.
-      * simpl in Hceval. simpl. rewrite Hceval. reflexivity.
-      * simpl in Hceval. simpl. 
-        destruct (ceval_step st c1 cont i1') eqn:Heqst1'o.
-        -- apply (IH1 i2') in Heqst1'o; try assumption.
-  
+      * (* skip *)
+        simpl in Hceval. simpl. rewrite Hceval. reflexivity.
+      * (* := *)
+        simpl in Hceval. simpl. rewrite Hceval. reflexivity.
+      * (* ; *)
+        simpl in Hceval. simpl. 
+        destruct (ceval_step st c1 cont i1') eqn:Heqst1'o. 
+        -- destruct s as [st'' cont''].
+          apply (IH1 i2') in Heqst1'o; try assumption.
+          rewrite Heqst1'o. simpl. simpl in Hceval.
+          apply (IH1 i2') in Hceval; try assumption.
+        -- discriminate Hceval.
+        -- discriminate Hceval.
+      * (* if *)
+        simpl in Hceval. simpl. destruct (beval st b);
+        apply (IH1 i2') in Hceval; assumption.
+      * (* while *)
+        simpl in Hceval. simpl. destruct (beval st b);
+        try assumption. destruct (ceval_step st c cont i1') eqn:Heqst1'o.
+        -- destruct s as [st'' cont''].
+          apply (IH1 i2') in Heqst1'o; try assumption.
+          rewrite Heqst1'o. simpl. simpl in Hceval.
+          apply (IH1 i2') in Hceval; try assumption.
+        -- discriminate Hceval.
+        -- discriminate Hceval.
+      * (* !! *)
+        simpl in Hceval. simpl.
+        destruct (ceval_step st c1 ((st, c2) :: cont) i1') eqn:Heqst1'o.
+        -- destruct s as [st'' cont''].
+          apply (IH1 i2') in Heqst1'o; try assumption.
+          rewrite Heqst1'o. simpl. simpl in Hceval.
+          rewrite Hceval. reflexivity.
+        -- discriminate Hceval.
+        -- discriminate Hceval.
+      * (* -> *)
+        simpl in Hceval. simpl. destruct (beval st b).
+        -- apply (IH1 i2') in Hceval; assumption.
+        -- destruct cont. 
+          ++ discriminate.
+          ++ destruct p as [st'' c']. apply (IH1 i2') in Hceval; try assumption.
 Qed.
+
+Fixpoint ceval_step3 (st : state) (c : com) (i : nat)
+                    : option state :=
+  match i with
+  | O => None
+  | S i' =>
+    match c with
+      | <{ skip }> =>
+          Some st
+      | <{ l := a1 }> =>
+          Some (l !-> aeval st a1 ; st)
+      | <{ c1 ; c2 }> =>
+          match (ceval_step3 st c1 i') with
+          | Some st' => ceval_step3 st' c2 i'
+          | None => None
+          end
+      | <{ if b then c1 else c2 end }> =>
+          if (beval st b)
+            then ceval_step3 st c1 i'
+            else ceval_step3 st c2 i'
+      | <{ while b1 do c1 end }> =>
+          if (beval st b1)
+          then match (ceval_step3 st c1 i') with
+               | Some st' => ceval_step3 st' c i'
+               | None => None
+               end
+          else Some st
+      | <{ c1 !! c2 }> =>
+        ceval_step3 st c i'
+      | <{ b -> c }> =>
+          if (beval st b) then
+            ceval_step3 st c i'
+          else None
+    end
+  end.
+
+Theorem ceval_step_more2: forall i1 i2 st st' c,
+  i1 <= i2 ->
+  ceval_step3 st c  i1 = Some st' ->
+  ceval_step3 st c  i2 = Some st'.
+Proof.
+induction i1 as [|i1']; intros i2 st st' c Hle Hceval.
+  - (* i1 = 0 *)
+    simpl in Hceval. discriminate Hceval.
+  - (* i1 = S i1' *)
+    destruct i2 as [|i2']. inversion Hle.
+    assert (Hle': i1' <= i2') by lia.
+    destruct c.
+    + (* skip *)
+      simpl in Hceval. inversion Hceval.
+      reflexivity.
+    + (* := *)
+      simpl in Hceval. inversion Hceval.
+      reflexivity.
+    + (* ; *)
+      simpl in Hceval. simpl.
+      destruct (ceval_step3 st c1 i1') eqn:Heqst1'o.
+      * (* st1'o = Some *)
+        apply (IHi1' i2') in Heqst1'o; try assumption.
+        rewrite Heqst1'o. simpl. simpl in Hceval.
+        apply (IHi1' i2') in Hceval; try assumption.

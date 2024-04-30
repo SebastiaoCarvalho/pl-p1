@@ -199,5 +199,5 @@ Notation "x -> y" :=
          (CCGuard x y)
             (in custom com at level 70, no associativity) : com_scope.
 
-Example p1 := <{ (X := 1  !!  X := 2); (X=2 -> skip) }>.
+Example p1 := <{ (X := 1  !!  X := 2); X=2 -> skip }>.
 Example p2 := <{ X := 2 }>.
