@@ -14,23 +14,6 @@ Inductive interpreter_result : Type :=
     bit of auxiliary notation to hide the plumbing involved in
     repeatedly matching against optional states. *)
 
-(*
-Notation "'LETOPT' x <== e1 'IN' e2"
-  := (match e1 with
-          | Some x => e2
-          | None => None
-       end)
-(right associativity, at level 60).*)
-
-(*Notation "'LETOPT' (st cont) <== e1 'IN' e2"
-  := (match e1 with
-          | Success x => 
-              match x with
-              | (st, cont) => e2
-              end
-          | Fail => Fail
-    end)
-(right associativity, at level 60).*)
 
 Notation "'LETOPT' x <== e1 'IN' e2"
   := (match e1 with
@@ -58,9 +41,8 @@ Fixpoint ceval_step (st : state) (c : com) (continuation: list (state * com)) (i
     | <{ x := a }> =>
         Success (t_update st x (aeval st a), continuation)
     | <{ c1 ; c2 }> =>
-         LETOPT n <== ceval_step st c1 continuation i' IN
-          ceval_step (fst n) c2 (snd n)  i'
-        (*ceval_step st c1 ((st, c2)::continuation) i'*)
+         LETOPT res <== ceval_step st c1 continuation i' IN
+          ceval_step (fst res) c2 (snd res) i'
     | <{ if b then c1 else c2 end }> =>
         if (beval st b) then
           ceval_step st c1 continuation i'
@@ -80,7 +62,7 @@ Fixpoint ceval_step (st : state) (c : com) (continuation: list (state * com)) (i
         else
           match continuation with
           | [] => Fail
-          | (st', c')::cont' => ceval_step st' c' cont' i'
+          | (st', c')::cont' => ceval_step st' (CSeq c' (CCGuard b c)) cont' i'
           end
     end
   end.
@@ -128,9 +110,11 @@ Example test_7:
   run_interpreter (X !-> 5) <{ X:= X+1; X=6 -> skip }> 3 = OK [("X", 6); ("Y", 0); ("Z", 0)].
 Proof. auto. Qed.
 
+
 Example test_8:
   run_interpreter (X !-> 5) <{ (X := 1 !! X := 2); (X = 2) -> X:=3 }> 4 = OOG.
 Proof. auto. Qed.
+
 
 Example test_9:
   run_interpreter (X !-> 5) <{ (X := 1 !! X := 2); (X = 2) -> X:=3 }> 5 = OK [("X", 3); ("Y", 0); ("Z", 0)].
