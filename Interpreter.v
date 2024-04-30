@@ -14,14 +14,14 @@ Inductive interpreter_result : Type :=
     bit of auxiliary notation to hide the plumbing involved in
     repeatedly matching against optional states. *)
 
-(*
+
 Notation "'LETOPT' x <== e1 'IN' e2"
   := (match e1 with
           | Some x => e2
           | None => None
        end)
 (right associativity, at level 60).
-*)
+
 
 (**
   2.1. TODO: Implement ceval_step as specified. To improve readability,
@@ -31,12 +31,39 @@ Notation "'LETOPT' x <== e1 'IN' e2"
 
 Fixpoint ceval_step (st : state) (c : com) (continuation: list (state * com)) (i : nat)
                     : interpreter_result :=
-  match i with
-  | (* TODO *)
-  | (* TODO *)
+                    
+ match i with
+  | O => OutOfGas
+  | S i' =>
+    match c with
+    | <{ skip }> =>
+        Success (st, continuation)
+    | <{ x := a }> =>
+        Success (update st x (aeval st a), continuation)
+    | <{ c1 ; c2 }> =>
+        ceval_step st c1 ((st, c2)::continuation) i'
+    | <{ if b then c1 else c2 end }> =>
+        if (beval st b) then
+          ceval_step st c1 continuation i'
+        else
+          ceval_step st c2 continuation i'
+    | <{ while b do c1 end }> =>
+        if (beval st b) then
+          ceval_step st c1 ((st, c)::continuation) i'
+        else
+          Success (st, continuation)
+    | <{ c1 !! c2 }> =>
+        ceval_step st c1 ((st, c2)::continuation) i'
+    | <{ b -> c }> =>
+        if (beval st b) then
+          ceval_step st c continuation i'
+        else
+          match continuation with
+          | [] => Fail
+          | (st', c')::cont' => ceval_step st' c' cont' i'
+          end
+    end
   end.
-
-
 
 (* Helper functions that help with running the interpreter *)
 Inductive show_result : Type :=
