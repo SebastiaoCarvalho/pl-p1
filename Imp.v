@@ -194,10 +194,10 @@ Notation "'while' x 'do' y 'end'" :=
             (in custom com at level 89, x at level 99, y at level 99) : com_scope.
 Notation "x !! y" :=
          (CNDet x y)
-            (in custom com at level 99, no associativity) : com_scope.
+            (in custom com at level 70, no associativity) : com_scope.
 Notation "x -> y" :=
          (CCGuard x y)
-            (in custom com at level 99, no associativity) : com_scope.
+            (in custom com at level 70, no associativity) : com_scope.
 
 Example p1 := <{ (X := 1  !!  X := 2); (X=2 -> skip) }>.
 Example p2 := <{ X := 2 }>.
