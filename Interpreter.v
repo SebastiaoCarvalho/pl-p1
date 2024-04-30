@@ -14,14 +14,31 @@ Inductive interpreter_result : Type :=
     bit of auxiliary notation to hide the plumbing involved in
     repeatedly matching against optional states. *)
 
-
+(*
 Notation "'LETOPT' x <== e1 'IN' e2"
   := (match e1 with
           | Some x => e2
           | None => None
        end)
-(right associativity, at level 60).
+(right associativity, at level 60).*)
 
+(*Notation "'LETOPT' (st cont) <== e1 'IN' e2"
+  := (match e1 with
+          | Success x => 
+              match x with
+              | (st, cont) => e2
+              end
+          | Fail => Fail
+    end)
+(right associativity, at level 60).*)
+
+Notation "'LETOPT' x <== e1 'IN' e2"
+  := (match e1 with
+          | Success x => e2
+          | Fail => Fail
+          | OutOfGas => OutOfGas
+        end)
+(right associativity, at level 60).
 
 (**
   2.1. TODO: Implement ceval_step as specified. To improve readability,
@@ -31,7 +48,7 @@ Notation "'LETOPT' x <== e1 'IN' e2"
 
 Fixpoint ceval_step (st : state) (c : com) (continuation: list (state * com)) (i : nat)
                     : interpreter_result :=
-                    
+
  match i with
   | O => OutOfGas
   | S i' =>
@@ -39,17 +56,20 @@ Fixpoint ceval_step (st : state) (c : com) (continuation: list (state * com)) (i
     | <{ skip }> =>
         Success (st, continuation)
     | <{ x := a }> =>
-        Success (update st x (aeval st a), continuation)
+        Success (t_update st x (aeval st a), continuation)
     | <{ c1 ; c2 }> =>
-        ceval_step st c1 ((st, c2)::continuation) i'
+         LETOPT n <== ceval_step st c1 continuation i' IN
+          ceval_step (fst n) c2 (snd n)  i'
+        (*ceval_step st c1 ((st, c2)::continuation) i'*)
     | <{ if b then c1 else c2 end }> =>
         if (beval st b) then
           ceval_step st c1 continuation i'
         else
           ceval_step st c2 continuation i'
     | <{ while b do c1 end }> =>
-        if (beval st b) then
-          ceval_step st c1 ((st, c)::continuation) i'
+        if (beval st b)
+          then LETOPT n <== ceval_step st c1 continuation i' IN
+          ceval_step (fst n) c (snd n)  i'
         else
           Success (st, continuation)
     | <{ c1 !! c2 }> =>
