@@ -133,27 +133,34 @@ Example test_11:
   = OK [("X", 0); ("Y", 5); ("Z", 0)].
 Proof. auto. Qed.
 
-
-
-(**
-  2.2. TODO: Prove p1_equals_p2. Recall that p1 and p2 are defined in Imp.v
-*)
-
 Theorem p1_equals_p2: forall st cont,
   (exists i0,
     (forall i1, i1 >= i0 -> ceval_step st p1 cont i1 =  ceval_step st p2 cont i1)).
 Proof.
-  intros.
-  exists 4.
-  intros.
-  apply (run_interperter).
-
+ intros st cont.
+  exists 5. 
+  intros i1 H_ge.
+  destruct i1 as [|i1'].
+  - inversion H_ge.
+  - simpl.
+    destruct i1' as [|i1''].
+    + simpl. 
+      assert (contra : 1 >= 5 -> False) by lia.
+      apply contra in H_ge. destruct H_ge.
+    + simpl. 
+      destruct i1'' as [|i1'''].
+      * assert (contra : 2 >= 5 -> False) by lia.
+        apply contra in H_ge. destruct H_ge.
+      * simpl.
+        destruct i1''' as [|i1''''].
+        -- assert (contra : 3 >= 5 -> False) by lia.
+           apply contra in H_ge. destruct H_ge.
+        -- simpl.
+            destruct i1'''' as [|i1'''''].
+            ++ assert (contra : 4 >= 5 -> False) by lia.
+                apply contra in H_ge. destruct H_ge.
+            ++ simpl. reflexivity.
 Qed.
-
-
-(**
-  2.3. TODO: Prove ceval_step_more.
-*)
 
 Theorem ceval_step_more: forall i1 i2 st st' c cont cont',
   i1 <= i2 ->
@@ -208,64 +215,3 @@ Proof.
           ++ discriminate.
           ++ destruct p as [st'' c']. apply (IH1 i2') in Hceval; try assumption.
 Qed.
-
-Fixpoint ceval_step3 (st : state) (c : com) (i : nat)
-                    : option state :=
-  match i with
-  | O => None
-  | S i' =>
-    match c with
-      | <{ skip }> =>
-          Some st
-      | <{ l := a1 }> =>
-          Some (l !-> aeval st a1 ; st)
-      | <{ c1 ; c2 }> =>
-          match (ceval_step3 st c1 i') with
-          | Some st' => ceval_step3 st' c2 i'
-          | None => None
-          end
-      | <{ if b then c1 else c2 end }> =>
-          if (beval st b)
-            then ceval_step3 st c1 i'
-            else ceval_step3 st c2 i'
-      | <{ while b1 do c1 end }> =>
-          if (beval st b1)
-          then match (ceval_step3 st c1 i') with
-               | Some st' => ceval_step3 st' c i'
-               | None => None
-               end
-          else Some st
-      | <{ c1 !! c2 }> =>
-        ceval_step3 st c i'
-      | <{ b -> c }> =>
-          if (beval st b) then
-            ceval_step3 st c i'
-          else None
-    end
-  end.
-
-Theorem ceval_step_more2: forall i1 i2 st st' c,
-  i1 <= i2 ->
-  ceval_step3 st c  i1 = Some st' ->
-  ceval_step3 st c  i2 = Some st'.
-Proof.
-induction i1 as [|i1']; intros i2 st st' c Hle Hceval.
-  - (* i1 = 0 *)
-    simpl in Hceval. discriminate Hceval.
-  - (* i1 = S i1' *)
-    destruct i2 as [|i2']. inversion Hle.
-    assert (Hle': i1' <= i2') by lia.
-    destruct c.
-    + (* skip *)
-      simpl in Hceval. inversion Hceval.
-      reflexivity.
-    + (* := *)
-      simpl in Hceval. inversion Hceval.
-      reflexivity.
-    + (* ; *)
-      simpl in Hceval. simpl.
-      destruct (ceval_step3 st c1 i1') eqn:Heqst1'o.
-      * (* st1'o = Some *)
-        apply (IHi1' i2') in Heqst1'o; try assumption.
-        rewrite Heqst1'o. simpl. simpl in Hceval.
-        apply (IHi1' i2') in Hceval; try assumption.
