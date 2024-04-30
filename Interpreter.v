@@ -110,11 +110,9 @@ Example test_7:
   run_interpreter (X !-> 5) <{ X:= X+1; X=6 -> skip }> 3 = OK [("X", 6); ("Y", 0); ("Z", 0)].
 Proof. auto. Qed.
 
-
 Example test_8:
   run_interpreter (X !-> 5) <{ (X := 1 !! X := 2); (X = 2) -> X:=3 }> 4 = OOG.
 Proof. auto. Qed.
-
 
 Example test_9:
   run_interpreter (X !-> 5) <{ (X := 1 !! X := 2); (X = 2) -> X:=3 }> 5 = OK [("X", 3); ("Y", 0); ("Z", 0)].
@@ -145,7 +143,10 @@ Theorem p1_equals_p2: forall st cont,
   (exists i0,
     (forall i1, i1 >= i0 -> ceval_step st p1 cont i1 =  ceval_step st p2 cont i1)).
 Proof.
-  (* TODO *)
+  intros.
+  exists 4.
+  intros.
+
 Qed.
 
 
@@ -158,5 +159,17 @@ Theorem ceval_step_more: forall i1 i2 st st' c cont cont',
   ceval_step st c cont i1 = Success (st', cont') ->
   ceval_step st c cont i2 = Success (st', cont').
 Proof.
-  (* TODO *)
+  induction i1 as [| i1' IH1]; 
+  intros i2 st st' c cont cont' Hle Hceval.
+  - simpl in Hceval. discriminate Hceval.
+  - destruct i2 as [| i2'].
+    + inversion Hle.
+    + assert (Hle': i1' <= i2') by lia.
+      destruct c.
+      * simpl in Hceval. simpl. rewrite Hceval. reflexivity.
+      * simpl in Hceval. simpl. rewrite Hceval. reflexivity.
+      * simpl in Hceval. simpl. 
+        destruct (ceval_step st c1 cont i1') eqn:Heqst1'o.
+        -- apply (IH1 i2') in Heqst1'o; try assumption.
+  
 Qed.
