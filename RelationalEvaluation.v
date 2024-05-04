@@ -26,23 +26,57 @@ Reserved Notation "st1 '/' q1 '=[' c ']=>' st2 '/' q2 '/' r"
  q2 constr at next level,
  r constr at next level).
 
-(* 
-3. TODO: Define the relational semantics (ceval) to support the required constructs.
-*)
 
 Inductive ceval : com -> state -> list (state * com) -> 
           result -> state -> list (state * com) -> Prop :=
-| E_Skip : forall st q,
- st / q =[ skip ]=> st / q / Success
-(* TODO. Hint: follow the same structure as shown in the chapter Imp *)
+  | E_Skip : forall st q,
+    st / q =[ skip ]=> st / q / Success
+  | E_Asgn (x : string) (a : aexp) : forall st q, 
+    st / q =[ CAsgn x a ]=> (t_update st x (aeval st a)) / q / Success
+  | E_Seq (c1 c2 : com) : forall st st1 st2 q q1 q2 suc,
+    st / q =[ c1 ]=> st1 / q1 / Success ->
+    st1 / q1 =[ c2 ]=> st2 / q2 / suc ->
+    st / q =[ CSeq c1 c2 ]=> st2 / q2 / suc
+  | E_IfTrue (b : bexp) (c1 c2 : com) : forall st1 st2 q1 q2 suc,
+    beval st1 b = true ->
+    st1 / q1 =[ c1 ]=> st2 / q2 / suc ->
+    st1 / q1 =[ CIf b c1 c2 ]=> st2 / q2 / suc
+  | E_IfFalse (b : bexp) (c1 c2 : com) : forall st1 st2 q1 q2 suc,
+    beval st1 b = false ->
+    st1 / q1 =[ c2 ]=> st2 / q2 / suc ->
+    st1 / q1 =[ CIf b c1 c2 ]=> st2 / q2 / suc
+  | E_WhileTrue (b : bexp) (c : com) : forall st1 st2 st3 q1 q2 q3 suc,
+    beval st1 b = true ->
+    st1 / q1 =[ c ]=> st2 / q2 / suc ->
+    st2 / q2 =[ CWhile b c ]=> st3 / q3 / suc ->
+    st1 / q1 =[ CWhile b c ]=> st3 / q3 / suc
+  | E_WhileFalse (b : bexp) (c : com) : forall st q,
+    beval st b = false ->
+    st / q =[ CWhile b c ]=> st / q / Success
+  | E_CNDetFirst (c1 c2 : com): forall st st1 q q1,
+    st / ((st, c2)::q) =[ c1 ]=> st1 / q1 / Success ->
+    st / q =[ CNDet c1 c2 ]=> st1 / q1 / Success
+  | E_CNDetSecond (c1 c2 : com): forall st st1 q q1,
+    st / ((st, c1)::q) =[ c2 ]=> st1 / q1 / Success ->
+    st / q =[ CNDet c1 c2 ]=> st1 / q1 / Success
+  | E_CCGuardTrue (b : bexp) (c : com): forall st st1 q q1 suc,
+    beval st b = true ->
+    st / q =[ c ]=> st1 / q1 / suc ->
+    st / q =[ CCGuard b c ]=> st1 / q1 / suc
+  | E_CCGuardFalseEmpty (b : bexp) (c : com): forall st q,
+    beval st b = false ->
+    q = [] ->
+    st / q =[ CCGuard b c ]=> empty_st / q / Fail
+  | E_CCGuardFalseNotEmpty (b : bexp) (c : com): forall st st1 st2 q q1 q2 c1 suc,
+    beval st b = false ->
+    q = (st1, c1)::q1 ->
+    st1 / q1 =[ CSeq c1 (CCGuard b c) ]=> st2 / q2 / suc ->
+    st / q =[ CCGuard b c ]=> st2 / q2 / suc
+
 where "st1 '/' q1 '=[' c ']=>' st2 '/' q2 '/' r" := (ceval c st1 q1 r st2 q2).
 
 
-(**
-  3.1. TODO: Use the new relational semantics to prove the examples
-             ceval_example_if, ceval_example_guard1, ceval_example_guard2,
-             ceval_example_guard3 and ceval_example_guard4.
-*)
+
 
 Example ceval_example_if:
 empty_st / [] =[
@@ -53,7 +87,11 @@ if (X <= 1)
 end
 ]=> (Z !-> 4 ; X !-> 2) / [] / Success.
 Proof.
-  (* TODO *)
+  apply E_Seq with (X !-> 2) [].
+  - apply E_Asgn.
+  - apply E_IfFalse.
+    + reflexivity.
+    + apply E_Asgn.
 Qed.
 
 
@@ -63,7 +101,11 @@ empty_st / [] =[
    (X = 1) -> X:=3
 ]=> (empty_st) / [] / Fail.
 Proof.
-  (* TODO *)
+  apply E_Seq with (X !-> 2) [].
+  - apply E_Asgn.
+  - apply E_CCGuardFalseEmpty.
+    + reflexivity.
+    + reflexivity.
 Qed. 
 
 Example ceval_example_guard2:
@@ -72,7 +114,11 @@ empty_st / [] =[
    (X = 2) -> X:=3
 ]=> (X !-> 3 ; X !-> 2) / [] / Success.
 Proof.
-  (* TODO *)
+  apply E_Seq with (X !-> 2) [].
+  - apply E_Asgn.
+  - apply E_CCGuardTrue.
+    + reflexivity.
+    + apply E_Asgn.
 Qed. 
 
 Example ceval_example_guard3: exists q,
@@ -81,7 +127,17 @@ empty_st / [] =[
    (X = 2) -> X:=3
 ]=> (X !-> 3) / q / Success.
 Proof.
-  (* TODO *)
+  exists [].
+  apply E_Seq with (X !-> 1) [(empty_st, <{ X := 2 }>)].
+  - apply E_CNDetFirst; apply E_Asgn.
+  - apply E_CCGuardFalseNotEmpty with empty_st [] <{ X := 2 }>.
+    + reflexivity.
+    + reflexivity.
+    + apply E_Seq with (X !-> 2) [].
+      * apply E_Asgn.
+      * apply E_CCGuardTrue.
+        -- reflexivity.
+        -- apply E_Asgn. (* Unable to unify "empty_st" with "X !-> 2". *)
 Qed.
     
 Example ceval_example_guard4: exists q,
@@ -90,7 +146,12 @@ empty_st / [] =[
    (X = 2) -> X:=3
 ]=> (X !-> 3) / q / Success.
 Proof.
-  (* TODO *)
+  exists [(empty_st, <{ X := 1 }>)].
+  apply E_Seq with (X !-> 2) [(empty_st, <{ X := 1 }>)].
+  - apply E_CNDetSecond; apply E_Asgn.
+  - apply E_CCGuardTrue.
+    + reflexivity.
+    + apply E_Asgn.
 Qed.
 
 
