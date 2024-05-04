@@ -77,7 +77,6 @@ where "st1 '/' q1 '=[' c ']=>' st2 '/' q2 '/' r" := (ceval c st1 q1 r st2 q2).
 
 
 
-
 Example ceval_example_if:
 empty_st / [] =[
 X := 2;
@@ -137,7 +136,9 @@ Proof.
       * apply E_Asgn.
       * apply E_CCGuardTrue.
         -- reflexivity.
-        -- apply E_Asgn. (* Unable to unify "empty_st" with "X !-> 2". *)
+        -- replace (X !-> 3) with (X !-> 3; X !-> 2). 
+          ++ apply E_Asgn.
+          ++ apply t_update_shadow.
 Qed.
     
 Example ceval_example_guard4: exists q,
@@ -151,7 +152,9 @@ Proof.
   - apply E_CNDetSecond; apply E_Asgn.
   - apply E_CCGuardTrue.
     + reflexivity.
-    + apply E_Asgn.
+    + replace (X !-> 3) with (X !-> 3; X !-> 2). 
+      * apply E_Asgn.
+      * apply t_update_shadow.
 Qed.
 
 
