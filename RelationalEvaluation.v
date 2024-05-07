@@ -184,7 +184,7 @@ Proof.
   unfold cequiv. unfold cequiv_imp. split.
   - intros.
     exists q2.
-    inversion H. subst.
+    inversion H; subst.
     inversion H2; subst.
     inversion H8; subst; simpl in *; try discriminate.
     inversion H10; subst.
@@ -204,18 +204,34 @@ Lemma cequiv_ex2:
 <{ X := 2 }>.
 Proof.
   unfold cequiv. split; unfold cequiv_imp; intros.
-  - exists ((st1, <{ X := 1 }>)::q1).
+  - (* exists ((st1, <{ X := 1 }>)::q1). *) (* <- *)
+    inversion H; subst. (* ; *)
+    inversion H2; subst. (* !! *)
+    + (* X := 1 *)
+      inversion H9; subst. (* X := *)
+      inversion H8; subst; simpl in *; try discriminate.
+      inversion H4; subst.
+      inversion H12; subst.
+      inversion H5; subst.
+      inversion H14; subst; simpl in *; try discriminate.
+      inversion H16; subst.
+      exists q2.
+      apply E_Asgn.
+    + (* X := 2*)
+      inversion H9; subst.
+      inversion H8; subst; simpl in *; try discriminate.
+      inversion H11; subst.
+      exists q3.
+      apply E_Asgn.
+  - (* -> *)
+    intros.
     inversion H; subst.
-    inversion H2; subst.
-    
-    
-        
-    admit.
-  - exists q2.
-    inversion H; subst.
-    apply E_Seq with (X !-> aeval st1 2; st1) [(st1, <{X := 1}>)].
-    + apply 
-    admit.
+    eexists.
+    apply E_Seq with (X !-> aeval st1 2; st1) ((st1, <{ X := 1 }>)::q2).
+    + apply E_CNDetSecond. apply E_Asgn.
+    + apply E_CCGuardTrue.
+      * reflexivity.
+      * apply E_Skip.
 Qed.
 
 
