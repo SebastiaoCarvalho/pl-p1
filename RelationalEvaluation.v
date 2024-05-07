@@ -232,17 +232,31 @@ Lemma choice_comm: forall c1 c2,
 <{ c1 !! c2 }> == <{ c2 !! c1 }>.
 Proof.
   intros.
-  unfold cequiv. unfold cequiv_imp. split.
-  - intros.
-    inversion H; subst.
-    + inversion H7; subst.
-      * 
+  unfold cequiv. unfold cequiv_imp. split;
+  intros; inversion H; subst; eexists.
+  - apply E_CNDetSecond. eassumption.
+  - apply E_CNDetFirst. eassumption.
+  - apply E_CNDetSecond. eassumption.
+  - apply E_CNDetFirst. eassumption.
 Qed.
 
 Lemma choice_assoc: forall c1 c2 c3,
 <{ (c1 !! c2) !! c3 }> == <{ c1 !! (c2 !! c3) }>.
 Proof.
-  (* TODO *)
+  intros.
+  unfold cequiv. unfold cequiv_imp. split;
+  intros; inversion H; subst; eexists.
+  - inversion H7; subst. 
+    + (* choose c1 with c1 !! (c2 !! c3 *)
+      apply E_CNDetFirst. eassumption. admit.
+    + (* choose c2 with c1 !! (c2 !! c3 *)
+      eassumption. admit.
+  - apply E_CNDetSecond. apply E_CNDetSecond. eassumption.
+  - apply E_CNDetFirst. apply E_CNDetFirst. eassumption.
+  - inversion H7; subst.
+    + apply E_CNDetFirst. apply E_CNDetSecond. 
+      eassumption. admit.
+    + apply E_CNDetSecond. eassumption. admit.
 Qed.
 
 
