@@ -53,12 +53,12 @@ Inductive ceval : com -> state -> list (state * com) ->
   | E_WhileFalse (b : bexp) (c : com) : forall st q,
     beval st b = false ->
     st / q =[ CWhile b c ]=> st / q / Success
-  | E_CNDetFirst (c1 c2 : com): forall st st1 q q1,
-    st / ((st, c2)::q) =[ c1 ]=> st1 / q1 / Success ->
-    st / q =[ CNDet c1 c2 ]=> st1 / q1 / Success
-  | E_CNDetSecond (c1 c2 : com): forall st st1 q q1,
-    st / ((st, c1)::q) =[ c2 ]=> st1 / q1 / Success ->
-    st / q =[ CNDet c1 c2 ]=> st1 / q1 / Success
+  | E_CNDetFirst (c1 c2 : com): forall st st1 q q1 result,
+    st / q =[ c1 ]=> st1 / q1 / result ->
+    st / q =[ CNDet c1 c2 ]=> st1 / ((st, c2)::q1) / result
+  | E_CNDetSecond (c1 c2 : com): forall st st1 q q1 result,
+    st / q =[ c2 ]=> st1 / q1 / result ->
+    st / q =[ CNDet c1 c2 ]=> st1 / ((st, c1)::q1) / result
   | E_CCGuardTrue (b : bexp) (c : com): forall st st1 q q1 suc,
     beval st b = true ->
     st / q =[ c ]=> st1 / q1 / suc ->
@@ -181,27 +181,62 @@ Lemma cequiv_ex1:
 <{ X := 2; X = 2 -> skip }> == 
 <{ X := 2 }>.
 Proof.
-  (* TODO *)
+  unfold cequiv. unfold cequiv_imp. split.
+  - intros.
+    exists q2.
+    inversion H. subst.
+    inversion H2; subst.
+    inversion H8; subst; simpl in *; try discriminate.
+    inversion H10; subst.
+    apply E_Asgn.
+  - intros.
+    exists q2.
+    inversion H. subst.
+    apply E_Seq with (X !-> aeval st1 2; st1) q2.
+    + assumption.
+    + apply E_CCGuardTrue.
+      * reflexivity.
+      * apply E_Skip.
 Qed.
 
 Lemma cequiv_ex2:
 <{ (X := 1 !! X := 2); X = 2 -> skip }> == 
 <{ X := 2 }>.
 Proof.
-  (* TODO *)
+  unfold cequiv. split; unfold cequiv_imp; intros.
+  - exists ((st1, <{ X := 1 }>)::q1).
+    inversion H; subst.
+    inversion H2; subst.
+    
+    
+        
+    admit.
+  - exists q2.
+    inversion H; subst.
+    apply E_Seq with (X !-> aeval st1 2; st1) [(st1, <{X := 1}>)].
+    + apply 
+    admit.
 Qed.
 
 
 Lemma choice_idempotent: forall c,
 <{ c !! c }> == <{ c }>.
 Proof.
-  (* TODO *)
+  intros.
+  split; unfold cequiv_imp; intros.
+  - inversion H; subst; exists q0; assumption.
+  - eexists. apply E_CNDetFirst. eassumption.
 Qed.
 
 Lemma choice_comm: forall c1 c2,
 <{ c1 !! c2 }> == <{ c2 !! c1 }>.
 Proof.
-  (* TODO *)
+  intros.
+  unfold cequiv. unfold cequiv_imp. split.
+  - intros.
+    inversion H; subst.
+    + inversion H7; subst.
+      * 
 Qed.
 
 Lemma choice_assoc: forall c1 c2 c3,
