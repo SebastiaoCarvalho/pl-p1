@@ -234,10 +234,10 @@ Proof.
   intros.
   unfold cequiv. unfold cequiv_imp. split;
   intros; inversion H; subst; eexists.
-  - apply E_CNDetSecond. eassumption.
-  - apply E_CNDetFirst. eassumption.
-  - apply E_CNDetSecond. eassumption.
-  - apply E_CNDetFirst. eassumption.
+  - apply E_CNDetSecond. eassumption. (* choose c1 with  c2 !! c1 *)
+  - apply E_CNDetFirst. eassumption.  (* choose c2 with  c2 !! c1 *)
+  - apply E_CNDetSecond. eassumption. (* choose c1 with  c1 !! c2 *)
+  - apply E_CNDetFirst. eassumption.  (* choose c1 with  c1 !! c2 *)
 Qed.
 
 Lemma choice_assoc: forall c1 c2 c3,
@@ -245,18 +245,25 @@ Lemma choice_assoc: forall c1 c2 c3,
 Proof.
   intros.
   unfold cequiv. unfold cequiv_imp. split;
-  intros; inversion H; subst; eexists.
-  - inversion H7; subst. 
+  intros; inversion H; subst.
+  - inversion H7; subst; eexists.
     + (* choose c1 with c1 !! (c2 !! c3 *)
-      apply E_CNDetFirst. eassumption. admit.
+      apply E_CNDetFirst. eassumption.
     + (* choose c2 with c1 !! (c2 !! c3 *)
-      eassumption. admit.
-  - apply E_CNDetSecond. apply E_CNDetSecond. eassumption.
-  - apply E_CNDetFirst. apply E_CNDetFirst. eassumption.
-  - inversion H7; subst.
-    + apply E_CNDetFirst. apply E_CNDetSecond. 
-      eassumption. admit.
-    + apply E_CNDetSecond. eassumption. admit.
+      apply E_CNDetSecond. apply E_CNDetFirst.
+      eassumption.
+  - (* choose c3 with c1 !! (c2 !! c3 *)
+    eexists; apply E_CNDetSecond; 
+    apply E_CNDetSecond; eassumption.
+  - (* choose c1 with (c1 !! c2) !! c3 *)
+    eexists; apply E_CNDetFirst. 
+    apply E_CNDetFirst. eassumption.
+  - inversion H7; subst; eexists.
+    + (* choose c2 with (c1 !! c2) !! c3 *)
+      apply E_CNDetFirst. apply E_CNDetSecond. 
+      eassumption.
+    + (* choose c3 with (c1 !! c2) !! c3 *)
+      apply E_CNDetSecond. eassumption.
 Qed.
 
 
