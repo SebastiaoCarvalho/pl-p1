@@ -78,6 +78,38 @@ Definition string_of_list (xs : list ascii) : string :=
 
 Definition token := string.
 
+(*
+Fixpoint tokenize_helper (cls : chartype) (acc xs : list ascii)
+                         : list (list ascii) :=
+  let tk := match acc with [] => [] | _::_ => [rev acc] end in
+  match xs with
+  | [] => tk
+  | x::[] => match cls, classifyChar x, x with
+    | _, _, "("      => tk ++ ["("]::(tokenize_helper other [] [])
+    | _, _, ")"      => tk ++ [")"]::(tokenize_helper other [] [])
+    | _, white, _    => tk ++ (tokenize_helper white [] [])
+    | alpha,alpha,x  => tokenize_helper alpha (x::acc) []
+    | digit,digit,x  => tokenize_helper digit (x::acc) []
+    | other,other,x  => tokenize_helper other (x::acc) []
+    | _,tp,x         => tk ++ (tokenize_helper tp [x] [])
+    end
+  | x::x'::xs' => match (x, x') with
+    | ("!", "!") => tk ++ ["!!"]::(tokenize_helper other [] xs')
+    | ("-", ">") => tk ++ ["->"]::(tokenize_helper other [] xs')
+    | _          => match cls, classifyChar x, x with
+      | _, _, "("      => tk ++ ["("]::(tokenize_helper other [] (x'::xs'))
+      | _, _, ")"      => tk ++ [")"]::(tokenize_helper other [] (x'::xs'))
+      | _, white, _    => tk ++ (tokenize_helper white [] (x'::xs'))
+      | alpha, alpha, x  => tokenize_helper alpha (x::acc) (x'::xs')
+      | digit, digit, x  => tokenize_helper digit (x::acc) (x'::xs')
+      | other, other, x  => tokenize_helper other (x::acc) (x'::xs')
+      | _, tp, x         => tk ++ (tokenize_helper tp [x] (x'::xs'))
+      end
+    end
+  end %char.
+*)
+
+
 Fixpoint tokenize_helper (cls : chartype) (acc xs : list ascii)
                        : list (list ascii) :=
   let tk := match acc with [] => [] | _::_ => [rev acc] end in
@@ -101,6 +133,7 @@ Fixpoint tokenize_helper (cls : chartype) (acc xs : list ascii)
       tk ++ (tokenize_helper tp [x] xs')
     end
   end %char.
+
 
 Definition tokenize (s : string) : list string :=
   map string_of_list (tokenize_helper white [] (list_of_string s)).
@@ -382,9 +415,17 @@ Fixpoint parseSimpleCommand (steps:nat)
             expect "end" rest' ;;
         SomeE(<{while e do c end}>, rest'')
     OR
+    TRY ' (c1, rest) <- parseSimpleCommand steps' xs ;;
+      ' (c2, rest') <- firstExpect "!!" (parseSimpleCommand steps') rest ;;
+      SomeE (CNDet c1 c2 , rest')
+    OR
     TRY ' (i, rest) <- parseIdentifier xs ;;
         ' (e, rest') <- firstExpect ":=" (parseAExp steps') rest ;;
         SomeE (<{i := e}>, rest')
+    OR
+    TRY ' (b, rest) <- parseBExp steps' xs ;;
+      ' (c, rest') <- firstExpect "->" (parseSimpleCommand steps') rest ;;
+      SomeE (CCGuard b c, rest')
     OR
         NoneE "Expecting a command"
 end
@@ -461,5 +502,16 @@ Example eg2 : parse "
       end;
       "x" := "z" }>.
 Proof. cbv. reflexivity. Qed.
+
+(*Conditional Guard Example*)
+Example eg3 : parse "x=2 -> skip" = SomeE <{ "x" = 2 -> skip }>.
+Proof. cbv. reflexivity. Qed.
+
+
+Compute parse "x := 1 !! x := 2".
+
+Example eg4 : parse "x := 1 !! x := 2"
+  = SomeE <{ "x" := 1 !! "x" := 2}>.
+Proof. reflexivity. Qed.
 
 (* 2023-12-29 17:12 *)
