@@ -1,8 +1,8 @@
 # Group Identification
 
- - Luís Xu, 99100, 
- - Gonçalo Carvalho , 99227 , goncalo.pires.carvalho@tecnico.ulisboa.pt
- - Sebastião Carvalho, 99326 , sebastiaovscarvalho@tecnico.ulisboa.pt
+ - Luís Xu, 99100, luisxu@tecnico.ulisboa.pt
+ - Gonçalo Carvalho , 99227, goncalo.pires.carvalho@tecnico.ulisboa.pt
+ - Sebastião Carvalho, 99326, sebastiaovscarvalho@tecnico.ulisboa.pt
 
 # Implemented Features
 Made the necessary changes to the Imp file, extending the commands, adding the new notations and adding the examples.
