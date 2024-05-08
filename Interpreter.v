@@ -23,11 +23,6 @@ Notation "'LETOPT' x <== e1 'IN' e2"
         end)
 (right associativity, at level 60).
 
-(**
-  2.1. TODO: Implement ceval_step as specified. To improve readability,
-             you are strongly encouraged to define auxiliary notation.
-             See the notation LETOPT in the ImpCEval chapter.
-*)
 
 Fixpoint ceval_step (st : state) (c : com) (continuation: list (state * com)) (i : nat)
                     : interpreter_result :=

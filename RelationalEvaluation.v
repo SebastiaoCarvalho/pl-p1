@@ -173,10 +173,6 @@ cequiv_imp c1 c2 /\ cequiv_imp c2 c1.
 Infix "==" := cequiv (at level 99).
 
 
-(**
-  3.2. TODO: Prove the properties below.
-*)
-
 Lemma cequiv_ex1:
 <{ X := 2; X = 2 -> skip }> == 
 <{ X := 2 }>.
