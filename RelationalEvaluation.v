@@ -53,12 +53,12 @@ Inductive ceval : com -> state -> list (state * com) ->
   | E_WhileFalse (b : bexp) (c : com) : forall st q,
     beval st b = false ->
     st / q =[ CWhile b c ]=> st / q / Success
-  | E_CNDetFirst (c1 c2 : com): forall st st1 q q1,
-    st / ((st, c2)::q) =[ c1 ]=> st1 / q1 / Success ->
-    st / q =[ CNDet c1 c2 ]=> st1 / q1 / Success
-  | E_CNDetSecond (c1 c2 : com): forall st st1 q q1,
-    st / ((st, c1)::q) =[ c2 ]=> st1 / q1 / Success ->
-    st / q =[ CNDet c1 c2 ]=> st1 / q1 / Success
+  | E_CNDetFirst (c1 c2 : com): forall st st1 q q1 result,
+    st / q =[ c1 ]=> st1 / q1 / result ->
+    st / q =[ CNDet c1 c2 ]=> st1 / ((st, c2)::q1) / result
+  | E_CNDetSecond (c1 c2 : com): forall st st1 q q1 result,
+    st / q =[ c2 ]=> st1 / q1 / result ->
+    st / q =[ CNDet c1 c2 ]=> st1 / ((st, c1)::q1) / result
   | E_CCGuardTrue (b : bexp) (c : com): forall st st1 q q1 suc,
     beval st b = true ->
     st / q =[ c ]=> st1 / q1 / suc ->
@@ -214,12 +214,35 @@ Qed.
 Lemma choice_seq_distr_l: forall c1 c2 c3,
 <{ c1 ; (c2 !! c3)}> == <{ (c1;c2) !! (c1;c3) }>.
 Proof.
-  (* TODO *)
+  intros c1 c2 c3.
+  split; unfold cequiv_imp; intros; inversion H; subst. 
+  -inversion H8; subst; eexists.
+    -- eapply E_CNDetFirst. eapply E_Seq.
+      --- eassumption.
+      --- eassumption.
+    -- eapply E_CNDetSecond. eapply E_Seq.
+      --- eassumption.
+      --- eassumption.
+  - inversion H7; subst; eexists.
+    -- eapply E_Seq.
+      --- eassumption.
+      --- eapply E_CNDetFirst. eassumption.
+  - inversion H7; subst; eexists.
+    -- eapply E_Seq.
+      --- eassumption.
+      --- eapply E_CNDetSecond. eassumption.
 Qed.
+    
+
 
 Lemma choice_congruence: forall c1 c1' c2 c2',
 c1 == c1' -> c2 == c2' ->
 <{ c1 !! c2 }> == <{ c1' !! c2' }>.
 Proof.
-  (* TODO *)
+  intros c1 c1' c2 c2' H1 H2.
+   split; unfold cequiv_imp; intros; inversion H; subst.
+   - apply H1 in H9. inversion H9. eexists. apply E_CNDetFirst. eassumption.
+   - apply H2 in H9. inversion H9. eexists. apply E_CNDetSecond. eassumption.
+   - apply H1 in H9. inversion H9. eexists. apply E_CNDetFirst. eassumption.
+   - apply H2 in H9. inversion H9. eexists. apply E_CNDetSecond. eassumption.
 Qed.
