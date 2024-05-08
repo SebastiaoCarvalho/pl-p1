@@ -204,11 +204,11 @@ Lemma cequiv_ex2:
 <{ X := 2 }>.
 Proof.
   unfold cequiv. split; unfold cequiv_imp; intros.
-  - (* exists ((st1, <{ X := 1 }>)::q1). *) (* <- *)
+  - (* <- *)
     inversion H; subst. (* ; *)
     inversion H2; subst. (* !! *)
     + (* X := 1 *)
-      inversion H9; subst. (* X := *)
+      inversion H9; subst.
       inversion H8; subst; simpl in *; try discriminate.
       inversion H4; subst.
       inversion H12; subst.
@@ -302,14 +302,14 @@ Proof.
       --- eassumption.
       (* c3 *)
       --- eassumption.
-  (*c1; (c2 !! c3)*)
+  (*c1; (c2 !! c3) choosing c2 *)
   - inversion H7; subst; eexists.
     -- eapply E_Seq.
       (* c1 *)
       --- eassumption.
       (* c2 !! c3 *)      
       --- eapply E_CNDetFirst. eassumption.
-    (**)
+  (*c1; (c2 !! c3) choosing c3 *)
   - inversion H7; subst; eexists.
     -- eapply E_Seq.
       --- eassumption.
