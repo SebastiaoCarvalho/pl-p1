@@ -288,17 +288,28 @@ Lemma choice_seq_distr_l: forall c1 c2 c3,
 Proof.
   intros c1 c2 c3.
   split; unfold cequiv_imp; intros; inversion H; subst. 
-  -inversion H8; subst; eexists.
+  (*c1;c2 !! c1;c3*)
+  -inversion H8; subst; eexists. 
+    (* Choose c1;c2*)
     -- eapply E_CNDetFirst. eapply E_Seq.
+      (* c1 *)
       --- eassumption.
+      (* c2 *)
       --- eassumption.
+    (*Choose c1;c3*)
     -- eapply E_CNDetSecond. eapply E_Seq.
+      (* c1 *)
       --- eassumption.
+      (* c3 *)
       --- eassumption.
+  (*c1; (c2 !! c3)*)
   - inversion H7; subst; eexists.
     -- eapply E_Seq.
+      (* c1 *)
       --- eassumption.
+      (* c2 !! c3 *)      
       --- eapply E_CNDetFirst. eassumption.
+    (**)
   - inversion H7; subst; eexists.
     -- eapply E_Seq.
       --- eassumption.
@@ -313,8 +324,12 @@ c1 == c1' -> c2 == c2' ->
 Proof.
   intros c1 c1' c2 c2' H1 H2.
    split; unfold cequiv_imp; intros; inversion H; subst.
+   (* c1' !! c2'  choosing c1'*)
    - apply H1 in H9. inversion H9. eexists. apply E_CNDetFirst. eassumption.
+   (* c1' !! c2' choosing c2'*)
    - apply H2 in H9. inversion H9. eexists. apply E_CNDetSecond. eassumption.
+    (* c1 !! c2 choosing c1*)
    - apply H1 in H9. inversion H9. eexists. apply E_CNDetFirst. eassumption.
+    (* c1 !! c2 choosing c2*)
    - apply H2 in H9. inversion H9. eexists. apply E_CNDetSecond. eassumption.
 Qed.
