@@ -15,5 +15,6 @@ commutativity, associativity, distributivity on the left and congruence for non 
 Finally, extended the parser and created 3 new examples.
 
 # Extras
-TODO: Identify and describe additional work that you have done,
-      so that it can be considered for extra credits.
+Improved the step-indexed evaluator so that: i) when it fails, instead of just returning OutOfGas or
+Fail, it returns an appropriate error message; ii) when it succeeds, it shows the resulting state and
+continutation, but also the number of “steps” taken.
