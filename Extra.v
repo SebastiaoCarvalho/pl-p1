@@ -1,59 +1,73 @@
 
 From FirstProject Require Import Maps Imp RelationalEvaluation.
+From Coq Require Import Lists.List. Import ListNotations.
 
+(* 
+  We will define a property inverse and prove 
+  some properties about it
+*)
+
+Definition inverse (c1 c2: com) : Prop :=
+  forall st1 st2 q1 q2,
+  st1 / q1 =[ c1 ]=> st2 / q2 / Success <->
+  st2 / q2 =[ c2 ]=> st1 / q1 / Success
+.
 
 (*
-If a command c1 leads to a state st2 where b is true
-then executing a non determinist choice between c1 and
-c2 and then having a guard on b is the same as having an
-if else.
+  The skip command is the inverse of itself
 *)
-Lemma determinism_with_guard_true_equals_if : 
-forall c1 c2 c3 st st' st'' q q' q'' result result' b, 
-st / q =[ c1 ]=> st' / q' / result ->
-st / q =[ c2 ]=> st'' / q'' / result' ->
-beval st'' b = false ->
-beval st' b = true ->
-<{(c1 !! c2); (b) -> c3}> 
-== <{c1; if b then c3 else skip end}>
-.
+
+Lemma skip_inverse :
+inverse <{skip}> <{skip}>.
+
 Proof.
-    intros.
-    split; unfold cequiv_imp; intros.
-    - inversion H3; subst.
-      inversion H6; subst.
-      + inversion H12; subst; simpl in *; try discriminate.
-        * eexists. apply E_Seq with st3 q4.
-          -- assumption.
-          -- apply E_IfTrue. try assumption.
-          admit.
-        * admit.
-      + 
-      admit.
-    - inversion H3; subst.
-      eexists.
-      apply E_Seq with st3 q3.
-      + 
-          
-               
+  unfold inverse; split; intros; 
+  inversion H; subst; assumption.
 Qed.
 
-(* Lemma choice_seq_distr_r: forall c1 c2 c3,
-<{ (c1 !! c2 ) ; c3}> == <{ (c1;c3) !! (c2;c3) }>.
-Proof.
-  intros.
-  split; unfold cequiv_imp; intros.
-  - inversion H; subst.
-    inversion H2; subst; eexists.
-    * 
-      apply E_CNDetFirst.
-      eapply E_Seq.
-      -- eassumption.
-      -- admit.
-    * apply E_CNDetSecond.
-      eapply E_Seq.
-      -- eassumption.
-      -- eassumption.
+(*
+  Applying a command followed by it's
+  inverse is the same as not doing anything
+*)
 
-Qed. *)
+Lemma seq_with_inverse_eq_skip :
+forall c1 c2,
+inverse c1 c2 ->
+<{skip}> == <{c1 ; c2}>.
+
+Proof.
+  intros;
+  unfold inverse in H;
+  split;
+  unfold cequiv_imp;
+  intros.
+  - (* -> *)
+    inversion H0; subst.
+    exists q2.
+    (* The idea would be to create a state stq and 
+      continuation q1 such that 
+      st2 / q2 =[ c1 ]=> stq / q1 / Success
+      and use this to apply E_Seq
+    *)
+    apply E_Seq with st2 q2.
+    admit.
+  - (* <- *)
+    inversion H0; subst.
+    apply H in H3.
+      
+Qed.
+
+Lemma inverse_of_inverse :
+forall c1,
+inverse c1 c1 ->
+<{c1}> == <{skip}>.
+
+Proof.
+  intros. unfold inverse in H.
+  split; unfold cequiv_imp; intros.
+  - (* -> *)
+    exists q2.
+    
+    
+Qed.
 
