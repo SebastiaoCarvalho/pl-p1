@@ -3,12 +3,17 @@ From Coq Require Import Arith.Arith.
 From Coq Require Import List.
 Import ListNotations.
 From FirstProject Require Import Imp Maps.
-
+From Coq Require Import Strings.String.
 
 Inductive interpreter_result : Type :=
   | Success (s: state * (list (state*com)))
   | Fail
   | OutOfGas.
+
+Inductive interpreter_result' : Type :=
+  | Success' (i: nat) (s: state * (list (state*com)))
+  | Fail' (msg: string)
+  | OutOfGas' (msg: string).
 
 (** We can improve the readability of this version by introducing a
     bit of auxiliary notation to hide the plumbing involved in
@@ -23,6 +28,13 @@ Notation "'LETOPT' x <== e1 'IN' e2"
         end)
 (right associativity, at level 60).
 
+Notation "'N_LETOPT' x <== e1 'IN' e2"
+  := (match e1 with
+          | Success' _ x => e2
+          | Fail' msg => Fail' msg
+          | OutOfGas' msg => OutOfGas' msg
+        end)
+(right associativity, at level 60).
 
 Fixpoint ceval_step (st : state) (c : com) (continuation: list (state * com)) (i : nat)
                     : interpreter_result :=
@@ -62,6 +74,45 @@ Fixpoint ceval_step (st : state) (c : com) (continuation: list (state * com)) (i
     end
   end.
 
+
+Fixpoint ceval_step' (st : state) (c : com) (continuation: list (state * com)) (i : nat) (steps: nat)
+                    : interpreter_result' :=
+
+ match i with
+  | O => OutOfGas' "OutOfGas - Steps are not enough to finish"
+  | S i' =>
+    match c with
+    | <{ skip }> =>
+        Success' (S steps) (st, continuation)
+    | <{ x := a }> =>
+        Success' (S steps) (t_update st x (aeval st a), continuation)
+    | <{ c1 ; c2 }> =>
+         N_LETOPT res <== ceval_step' st c1 continuation i' (S steps) IN
+          ceval_step' (fst res) c2 (snd res) i' (S steps)
+    | <{ if b then c1 else c2 end }> =>
+        if (beval st b) then
+          ceval_step' st c1 continuation i' (S steps)
+        else
+          ceval_step' st c2 continuation i' (S steps)
+    | <{ while b do c1 end }> =>
+        if (beval st b)
+          then N_LETOPT n <== ceval_step' st c1 continuation i'(S steps)  IN
+          ceval_step' (fst n) c (snd n)  i' (S steps)
+        else
+          Success' (S steps) (st, continuation)
+    | <{ c1 !! c2 }> =>
+        ceval_step' st c1 ((st, c2)::continuation) i' (S steps)
+    | <{ b -> c }> =>
+        if (beval st b) then
+          ceval_step' st c continuation i' (S steps)
+        else
+          match continuation with
+          | [] => Fail' "Fail - no more options to explore"
+          | (st', c')::cont' => ceval_step' st' (CSeq c' (CCGuard b c)) cont' i' (S steps)
+          end
+    end
+  end.
+
 (* Helper functions that help with running the interpreter *)
 Inductive show_result : Type :=
   | OK (st: list (string*nat))
@@ -74,6 +125,13 @@ Definition run_interpreter (st: state) (c:com) (n:nat) :=
     | OutOfGas => OOG
     | Fail => KO
     | Success (st', _) => OK [("X", st' X); ("Y", st' Y); ("Z", st' Z)]
+  end.
+
+Definition run_interpreter' (st: state) (c:com) (n:nat) :=
+  match (ceval_step' st c [] n 0) with
+    | OutOfGas' _ => OOG
+    | Fail' _ => KO
+    | Success' _ (st', _) => OK [("X", st' X); ("Y", st' Y); ("Z", st' Z)]
   end.
 
 (* Tests are provided to ensure that your interpreter is working for these examples *)
